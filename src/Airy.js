@@ -22,10 +22,12 @@ function createTextElement(text) {
 }
 
 function render(element, container) {
-  nextUnitOfWork = { props: { children: [element] }, dom: container };
+  wipRoot = { props: { children: [element] }, dom: container };
+  nextUnitOfWork = wipRoot;
   requestIdleCallback(workLoop);
 }
 
+let wipRoot;
 let nextUnitOfWork;
 
 function workLoop(deadline) {
@@ -35,7 +37,25 @@ function workLoop(deadline) {
     shouldYield = deadline.timeRemaining() < 1;
   }
 
+  if (!nextUnitOfWork && wipRoot) {
+    commitRoot();
+  }
+
   requestIdleCallback(workLoop);
+}
+
+function commitRoot() {
+  commitWork(wipRoot.firstChild);
+  wipRoot = null;
+}
+
+function commitWork(fiber) {
+  if (!fiber) {
+    return;
+  }
+  fiber.parent.dom.appendChild(fiber.dom);
+  commitWork(fiber.firstChild);
+  commitWork(fiber.sibling);
 }
 
 function performUnitOfWork(fiber) {
@@ -94,8 +114,6 @@ function createDom(fiber) {
     .forEach((prop) => {
       dom[prop] = fiber.props[prop];
     });
-
-  fiber.parent.dom.appendChild(dom);
 
   return dom;
 }
