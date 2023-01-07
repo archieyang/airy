@@ -7,8 +7,12 @@ import { Airy } from "./Airy";
 
 const element = (
   <div id="container">
-    <a href="https://codethink.me">A Link</a>
-    <b />
+    <div>First line</div>
+    <div>
+      <a href="https://codethink.me">A Link</a>
+      <b />
+    </div>
+    <div>Last line</div>
   </div>
 );
 
