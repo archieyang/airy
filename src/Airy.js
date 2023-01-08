@@ -61,19 +61,42 @@ function commitWork(fiber) {
   }
 
   if (fiber.effectTag === "PLACEMENT" && fiber.dom) {
-    fiber.parent.dom.appendChild(fiber.dom);
+    getParentDom(fiber).appendChild(fiber.dom);
   } else if (fiber.effectTag === "UPDATE") {
     updateDom(fiber.dom, fiber.alternative.props, fiber.props);
   } else if (fiber.effectTag === "DELETION") {
-    fiber.parent.dom.removeChild(fiber.dom);
+    commitDeletion(fiber, getParentDom(fiber));
+    getParentDom(fiber).removeChild(fiber.dom);
   }
 
   deletions.forEach((it) => {
-    it.parent.dom.remove(it.dom);
+    getParentDom(it).remove(it.dom);
   });
   deletions = [];
   commitWork(fiber.firstChild);
   commitWork(fiber.sibling);
+}
+
+function commitDeletion(fiber, parentDom) {
+  if (fiber.dom) {
+    parentDom.removeChild(fiber.dom);
+  } else {
+    commitDeletion(fiber.firstChild, parentDom);
+  }
+}
+
+function getParentDom(fiber) {
+  let parent = fiber.parent;
+
+  while (parent && !parent.dom) {
+    parent = parent.parent;
+  }
+
+  if (parent) {
+    return parent.dom;
+  } else {
+    return null;
+  }
 }
 
 const isEvent = (key) => key.startsWith("on");
@@ -115,11 +138,15 @@ function updateDom(dom, prevProps, nextProps) {
 }
 
 function performUnitOfWork(fiber) {
-  if (!fiber.dom) {
-    fiber.dom = createDom(fiber);
-  }
+  if (fiber.type instanceof Function) {
+    reconcileChildren(fiber, [fiber.type(fiber.props)]);
+  } else {
+    if (!fiber.dom) {
+      fiber.dom = createDom(fiber);
+    }
 
-  reconcileChildren(fiber);
+    reconcileChildren(fiber, fiber.props?.children);
+  }
 
   let nextFiber = null;
   if (fiber.firstChild) {
@@ -142,11 +169,9 @@ function performUnitOfWork(fiber) {
 
 let deletions = [];
 
-function reconcileChildren(fiber) {
+function reconcileChildren(fiber, children) {
   let prev = null;
   let oldFiber = fiber.alternative?.firstChild;
-
-  let children = fiber.props?.children;
   let index = 0;
 
   while ((children && index < children.length) || oldFiber) {

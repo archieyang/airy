@@ -5,17 +5,20 @@ import "./index.css";
 import reportWebVitals from "./reportWebVitals";
 import { Airy } from "./Airy";
 
-const element = (
-  <div id="container">
-    <div>First line</div>
-    <div>
-      <a href="https://codethink.me">A Link</a>
-      <b />
+function App() {
+  return (
+    <div id="container">
+      <div>First line</div>
+      <div>
+        <a href="https://codethink.me">A Link</a>
+        <b />
+      </div>
+      <div>Last line</div>
     </div>
-    <div>Last line</div>
-  </div>
-);
+  );
+}
 
+const element = <App />
 Airy.render(element, document.getElementById("root"));
 // console.log(`${JSON.stringify(element)}`);
 // const root = ReactDOM.createRoot();
